@@ -10,10 +10,11 @@ import ast
 import csv
 import io
 import contextlib
+import random
 
 from prettytable import PrettyTable
-from http_request_randomizer.requests.proxy.requestProxy import RequestProxy
 from IPy import IP
+from bs4 import BeautifulSoup
 
 #usage info
 def msg(name=None):
@@ -39,6 +40,7 @@ def msg(name=None):
 
 #global vars-----------------------------------------
 results = {}
+proxies = []
 tor_project_list = ""
 ip_dan_list = ""
 default_csv = "checkedIps.csv"
@@ -69,6 +71,7 @@ if (len(sys.argv) < 2):
 args = parser.parse_args()
 
 #FUNCTIONS--------------------------------------------
+#TODO add proxy ability to all functions
 #GET_TOR_LISTS
 def getTOR():
     global ip_dan_list
@@ -83,6 +86,15 @@ def getTOR():
         tor_project_list = requests.get("https://check.torproject.org/exit-addresses")
     except:
         print ecolors.FAIL + "[!] ",tor_project_list.status_code, tor_project_list.reason + ecolors.ENDC
+
+#Get Proxy list
+def getProxies():
+    global proxies
+    proxiesReq = requests.get("https://www.sslproxies.org/")
+    soup = BeautifulSoup(proxiesReq.content, 'html.parser')
+    table = soup.find(id='proxylisttable')
+    for row in table.tbody.find_all('tr'):
+        proxies.append({'ip': row.find_all('td')[0].string,'port': row.find_all('td')[1].string})
 
 #create base dictionaries for keys
 def validateIP(input):
@@ -145,11 +157,13 @@ def checkApility(input):
         print ecolors.MSG + "[#] Searching apility.io for " + input + ecolors.ENDC
     try:
         #proxy request
-        #TODO manually implement because it fails too much
+        #TODO add error handling and delete proxy if bad
+        #TODO add ability to specify your own proxy in the cli or proxy list
         if args.proxy:
+            index = random.randint(0, len(proxies) - 1)
+            proxy = proxies[index]['ip'] + ':' + proxies[index]['ip']
             headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML,like Gecko) Chrome/41.0.2228.0 Safari/537.36','Referer': 'https://apility.io/'}
-            req_proxy = RequestProxy()
-            request = req_proxy.generate_proxied_request(apilityURL,headers=headers)
+            request = requests.get(apilityURL, headers=headers, proxies={"https":proxy.encode('utf-8')})
         #attempt to use cfscrape
         elif cfscrape:
             scraper = cfscrape.create_scraper()
@@ -218,6 +232,8 @@ def nostdout():
 #MAIN-------------------------------------------------
 def main():
     try:
+        if args.proxy:
+            getProxies()
         createDict()
         test = "go"
         for key in results:
