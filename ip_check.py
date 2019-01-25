@@ -203,7 +203,7 @@ def checkApility(input):
             elif "Sorry, you have reached your daily quota." in line:
                 print ecolors.FAIL + "[!] DAILY LIMIT REACHED AT APILITY"
                 print "[!] Reputation will NOT be checked" + ecolors.ENDC
-                print ecolors.MSG "[#] Use '-p' to proxy requests and thwart rate limiting!" + ecolors.ENDC
+                print ecolors.MSG + "[#] Use '-p' to proxy requests and thwart rate limiting!" + ecolors.ENDC
                 return "kill"
     return "go"
 
